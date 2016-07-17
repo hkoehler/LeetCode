@@ -6,42 +6,30 @@ class Solution {
         Node(int v) : val(v) {}
         int val;
         int indegree = 0;   // dependent nodes
-        int visited = false;
         vector<Node*> nbs;
     };
     
-    unordered_map<int, Node*> nodes;
-    
 public:
-    Node *lookup(int n) {
-        auto node = nodes.find(n);
-        if (node != nodes.end())
-            return node->second;
-        auto newNode = new Node(n);
-        nodes[n] = newNode;
-        return newNode;
-    }
+    vector<int> findOrder(int numCourses, vector<pair<int, int>>& prerequisites) {
+        unordered_map<int, Node*> nodes;
+        queue<Node *> q;
+        vector<int> res;
+        size_t visited = 0;
+        
+        // create all nodes
+        for (int n = 0; n < numCourses; n++)
+            nodes[n] = new Node(n);
 
-    void build(vector<pair<int, int>> &edges) {
-        for (auto &e : edges) {
+        // create edges
+        for (auto &e : prerequisites) {
             // first node depends on second
-            auto first = lookup(e.first);
-            auto second = lookup(e.second);
+            auto first = nodes[e.first];
+            auto second = nodes[e.second];
             first->indegree++;
             second->nbs.push_back(first);
         }
-    }
 
-    vector<int> findOrder(int numCourses, vector<pair<int, int>>& prerequisites) {
-        queue<Node *> q;
-        vector<int> res;
-        
-        if (prerequisites.empty())
-            return {};
-        
-        build(prerequisites);
-        
-        // find all node with in-degree 1
+        // queue all node with in-degree 0
         for (auto node : nodes)
             if (node.second->indegree == 0)
                 q.push(node.second);
@@ -51,19 +39,17 @@ public:
             auto node = q.front();
             
             q.pop();
-            // cycle!
-            if (node->visited) {
-                res = {};
-                break;
-            }
-            node->visited = true;
-            res.push_back(node->val);
+            visited++;
             if (res.size() == numCourses)
                 break;
-            for (auto nb : node->nbs) {
-                q.push(nb);
-            }
+            for (auto nb : node->nbs)
+                if(--nb->indegree == 0)
+                    q.push(nb);
+            res.push_back(node->val);
         }
-        return res;
+        if (visited == numCourses)
+            return res;
+        else
+            return {};
     }
 };
